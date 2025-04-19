@@ -1,2 +1,0 @@
-# Application-development
-Sample application
