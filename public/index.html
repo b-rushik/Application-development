@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Question Paper Management System for academic institutions" />
+  
+  <!-- Favicon and App Icons -->
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  
+  <!-- Title -->
+  <title>Question Paper Management System</title>
+  
+  <!-- AWS Amplify Auth UI Styles -->
+  <link rel="stylesheet" href="https://unpkg.com/@aws-amplify/ui@latest/dist/styles.css">
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Preconnect to AWS services -->
+  <link rel="preconnect" href="https://aws-amplify.github.io">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Question Paper Management System",
+      "description": "Secure platform for creating and managing academic examination papers",
+      "applicationCategory": "Education"
+    }
+  </script>
+  
+  <!-- Mobile-specific meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+<body>
+  <!-- Root element for React -->
+  <noscript>You need to enable JavaScript to run this application.</noscript>
+  <div id="root"></div>
+  
+  <!-- AWS Amplify configuration script -->
+  <script>
+    window.amplifyConfig = {
+      Auth: {
+        region: 'YOUR_AWS_REGION',
+        userPoolId: 'YOUR_USER_POOL_ID',
+        userPoolWebClientId: 'YOUR_CLIENT_ID',
+        mandatorySignIn: true,
+        authenticationFlowType: 'USER_SRP_AUTH'
+      },
+      API: {
+        endpoints: [
+          {
+            name: 'qpms-api',
+            endpoint: 'YOUR_API_GATEWAY_URL',
+            region: 'YOUR_AWS_REGION'
+          }
+        ]
+      },
+      Storage: {
+        AWSS3: {
+          bucket: 'YOUR_S3_BUCKET_NAME',
+          region: 'YOUR_AWS_REGION',
+          level: 'private'
+        }
+      }
+    };
+  </script>
+  
+  <!-- Performance monitoring (optional) -->
+  <script>
+    if (process.env.NODE_ENV === 'production') {
+      // Add your analytics/performance monitoring scripts here
+    }
+  </script>
+</body>
+</html>
