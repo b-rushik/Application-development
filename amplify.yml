@@ -1,0 +1,21 @@
+version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - echo "Backend phase - nothing to do"
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Delegating to buildspec.yml"
+    build:
+      commands:
+        - bash -c "echo 'Delegating to buildspec.yml'; exit 0"
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*  
