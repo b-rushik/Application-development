@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - npm install
+
+  pre_build:
+    commands:
+      - echo "Starting pre-build phase..."
+      - aws --version
+
+  build:
+    commands:
+      - echo "Starting build phase..."
+      - npm run build
+      - aws cloudformation deploy --template-file cloudformation.yaml --stack-name qpms-backend --capabilities CAPABILITY_IAM --parameter-overrides Environment=dev
+
+  post_build:
+    commands:
+      - echo "Build completed successfully!"
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: dist
