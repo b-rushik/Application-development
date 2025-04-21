@@ -1,28 +1,53 @@
 version: 0.2
 
+env:
+  variables:
+    NODE_ENV: "production"
+  parameter-store:
+    VITE_AWS_REGION: "/qpms/aws-region"
+    VITE_COGNITO_USER_POOL_ID: "/qpms/cognito-user-pool-id"
+    VITE_COGNITO_CLIENT_ID: "/qpms/cognito-client-id"
+    VITE_S3_BUCKET: "/qpms/s3-bucket"
+    VITE_API_ENDPOINT: "/qpms/api-endpoint"
+
 phases:
   install:
     runtime-versions:
       nodejs: 18
     commands:
-      - npm install
+      - npm ci
+      - npm cache verify
 
   pre_build:
     commands:
       - echo "Starting pre-build phase..."
       - aws --version
+      - echo "Checking for cloudformation template..."
+      - test -f cloudformation.yaml || exit 1
 
   build:
     commands:
       - echo "Starting build phase..."
       - npm run build
       - aws cloudformation deploy --template-file cloudformation.yaml --stack-name qpms-backend --capabilities CAPABILITY_IAM --parameter-overrides Environment=dev
+      - echo "Retrieving CloudFormation outputs..."
+      - aws cloudformation describe-stacks --stack-name qpms-backend --query 'Stacks[0].Outputs' --output json > stack-outputs.json
 
   post_build:
     commands:
       - echo "Build completed successfully!"
+      - echo "Updating environment variables with stack outputs..."
+      - node update-env.js stack-outputs.json
+
+cache:
+  paths:
+    - 'node_modules/**/*'
+    - '.npm/**/*'
+    - 'dist/**/*'
 
 artifacts:
   files:
     - '**/*'
   base-directory: dist
+  name: qpms-build-$(date +%Y-%m-%d)
+  discard-paths: no
