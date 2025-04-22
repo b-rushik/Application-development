@@ -1,0 +1,39 @@
+version: 1
+applications:
+  - appRoot: .
+    env:
+      variables:
+        NODE_ENV: "production"
+        CI: "true"
+    backend:
+      phases:
+        preBuild:
+          commands:
+            - echo "Validating CF template…"
+            - aws cloudformation validate-template --template-body file://cloudformation.yaml
+        build:
+          commands:
+            - echo "Deploying backend…"
+            - aws cloudformation deploy \
+                --template-file cloudformation.yaml \
+                --stack-name qpms-backend \
+                --capabilities CAPABILITY_IAM \
+                --parameter-overrides Environment=dev
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+            - npm cache verify
+        build:
+          commands:
+            - npm run lint
+            - npm run test || true
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
