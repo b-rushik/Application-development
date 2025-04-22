@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuthState, User, UserRole } from '../types';
+import { auth } from '../services/auth';
+import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, role: UserRole, userId: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   verifyOtp: (email: string, otp: string) => Promise<void>;
   resetPassword: (email: string, newPassword: string) => Promise<void>;
 }
@@ -29,67 +31,78 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AuthState>(initialAuthState);
 
-  // Initialize auth state from cookies
   useEffect(() => {
-    const userDataStr = Cookies.get('user');
-    if (userDataStr) {
+    const initializeAuth = async () => {
       try {
-        const userData = JSON.parse(userDataStr);
-        setState({
-          user: userData,
-          isLoading: false,
-          isAuthenticated: true,
-        });
+        const currentUser = await auth.getCurrentUser();
+        if (currentUser) {
+          const userAttributes = currentUser.attributes || {};
+          const userData: User = {
+            id: currentUser.userId,
+            name: userAttributes.name || userAttributes.email,
+            email: userAttributes.email,
+            role: (userAttributes['custom:role'] as UserRole) || 'paperSetter',
+            isVerified: true,
+            createdAt: new Date().toISOString(),
+          };
+
+          setState({
+            user: userData,
+            isLoading: false,
+            isAuthenticated: true,
+          });
+
+          // Store in cookie for persistence
+          Cookies.set('user', JSON.stringify(userData), { expires: 7 });
+        } else {
+          setState({
+            ...initialAuthState,
+            isLoading: false,
+          });
+        }
       } catch (error) {
-        console.error('Failed to parse user data from cookie', error);
+        console.error('Error initializing auth:', error);
         setState({
           ...initialAuthState,
           isLoading: false,
         });
       }
-    } else {
-      setState({
-        ...initialAuthState,
-        isLoading: false,
-      });
-    }
+    };
+
+    initializeAuth();
   }, []);
 
-  // Mock login implementation (replace with real API calls in production)
   const login = async (email: string, password: string) => {
-    // Simulate API call
     setState({ ...state, isLoading: true });
     
     try {
-      // This is where you'd make an actual API call
-      // For now, we'll simulate a successful login with mock data
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const signInResult = await auth.signIn({ email, password });
       
-      // Mock user data based on email domain
-      let role: UserRole = 'paperSetter';
-      if (email.includes('admin')) {
-        role = 'admin';
-      } else if (email.includes('examcell')) {
-        role = 'paperGetter';
+      if (signInResult.isSignedIn) {
+        const currentUser = await auth.getCurrentUser();
+        const userAttributes = currentUser.attributes || {};
+        
+        const userData: User = {
+          id: currentUser.userId,
+          name: userAttributes.name || email,
+          email: userAttributes.email,
+          role: (userAttributes['custom:role'] as UserRole) || 'paperSetter',
+          isVerified: true,
+          createdAt: new Date().toISOString(),
+        };
+
+        Cookies.set('user', JSON.stringify(userData), { expires: 7 });
+        
+        setState({
+          user: userData,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+
+        toast.success('Login successful!');
+      } else {
+        throw new Error('Login failed');
       }
-      
-      const user: User = {
-        id: Math.random().toString(36).substring(2, 15),
-        name: email.split('@')[0],
-        email,
-        role,
-        isVerified: role === 'admin',
-        createdAt: new Date().toISOString(),
-      };
-      
-      // Store user in cookie
-      Cookies.set('user', JSON.stringify(user), { expires: 7 });
-      
-      setState({
-        user,
-        isLoading: false,
-        isAuthenticated: true,
-      });
     } catch (error) {
       console.error('Login error:', error);
       setState({
@@ -100,67 +113,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Mock register implementation
   const register = async (email: string, password: string, role: UserRole, userId: string) => {
     setState({ ...state, isLoading: true });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Generate organization email
-      const orgEmail = `${userId}@organization-domain-name.com`;
+      const { nextStep } = await auth.signUp({ email, password, role, userId });
       
       const user: User = {
-        id: Math.random().toString(36).substring(2, 15),
+        id: userId,
         name: userId,
         email,
-        personalEmail: email,
-        orgEmail,
         role,
         isVerified: false,
         createdAt: new Date().toISOString(),
       };
       
-      // In a real app, the user wouldn't be authenticated yet until OTP verification
       setState({
         user,
         isLoading: false,
         isAuthenticated: false,
       });
       
-      // Return success to trigger OTP verification flow
+      if (nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
+        toast.info('Please verify your email address');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       setState({
         ...state,
         isLoading: false,
       });
-      throw new Error('Registration failed. Please try again.');
+      throw error;
     }
   };
 
-  // Mock OTP verification
   const verifyOtp = async (email: string, otp: string) => {
     setState({ ...state, isLoading: true });
     
     try {
-      // Simulate API call
+      // In a real app, you'd call confirmSignUp here
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // In a real app, you'd validate the OTP with your backend
-      if (otp !== '123456') { // Mock OTP check
+      if (otp !== '123456') {
         throw new Error('Invalid OTP');
       }
       
-      // If the user exists in state, update and set as authenticated
       if (state.user) {
         const updatedUser = {
           ...state.user,
           isVerified: true,
         };
         
-        // Store user in cookie
         Cookies.set('user', JSON.stringify(updatedUser), { expires: 7 });
         
         setState({
@@ -181,16 +184,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Mock password reset
   const resetPassword = async (email: string, newPassword: string) => {
     setState({ ...state, isLoading: true });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real app, you'd call your backend to reset the password
-      
+      await auth.resetPassword(email);
       setState({
         ...state,
         isLoading: false,
@@ -201,21 +199,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ...state,
         isLoading: false,
       });
-      throw new Error('Password reset failed. Please try again.');
+      throw error;
     }
   };
 
-  // Logout
-  const logout = () => {
-    // Remove cookie
-    Cookies.remove('user');
-    
-    // Reset state
-    setState({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-    });
+  const logout = async () => {
+    try {
+      await auth.signOut();
+      Cookies.remove('user');
+      setState({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
   };
 
   const value = {
