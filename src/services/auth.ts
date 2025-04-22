@@ -1,5 +1,4 @@
-import { Auth } from 'aws-amplify';
-import { CognitoUser } from '@aws-amplify/auth';
+import { signUp, signIn, signOut, getCurrentUser, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
 import { UserRole } from '../types';
 
 interface SignUpParams {
@@ -17,15 +16,17 @@ interface SignInParams {
 export const auth = {
   signUp: async ({ email, password, role, userId }: SignUpParams) => {
     try {
-      const { user } = await Auth.signUp({
+      const { userId: newUserId, nextStep } = await signUp({
         username: email,
         password,
-        attributes: {
-          'custom:role': role,
-          'custom:userId': userId,
-        },
+        options: {
+          userAttributes: {
+            'custom:role': role,
+            'custom:userId': userId,
+          }
+        }
       });
-      return user;
+      return { userId: newUserId, nextStep };
     } catch (error) {
       console.error('Error signing up:', error);
       throw error;
@@ -34,8 +35,8 @@ export const auth = {
 
   signIn: async ({ email, password }: SignInParams) => {
     try {
-      const user = await Auth.signIn(email, password);
-      return user;
+      const { nextStep } = await signIn({ username: email, password });
+      return nextStep;
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;
@@ -44,16 +45,16 @@ export const auth = {
 
   signOut: async () => {
     try {
-      await Auth.signOut();
+      await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
     }
   },
 
-  getCurrentUser: async (): Promise<CognitoUser | null> => {
+  getCurrentUser: async () => {
     try {
-      return await Auth.currentAuthenticatedUser();
+      return await getCurrentUser();
     } catch (error) {
       return null;
     }
@@ -61,7 +62,7 @@ export const auth = {
 
   resetPassword: async (email: string) => {
     try {
-      await Auth.forgotPassword(email);
+      await resetPassword({ username: email });
     } catch (error) {
       console.error('Error resetting password:', error);
       throw error;
@@ -70,10 +71,14 @@ export const auth = {
 
   confirmResetPassword: async (email: string, code: string, newPassword: string) => {
     try {
-      await Auth.forgotPasswordSubmit(email, code, newPassword);
+      await confirmResetPassword({
+        username: email,
+        confirmationCode: code,
+        newPassword
+      });
     } catch (error) {
       console.error('Error confirming password reset:', error);
       throw error;
     }
-  },
+  }
 };

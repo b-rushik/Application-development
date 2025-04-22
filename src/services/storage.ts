@@ -1,13 +1,17 @@
-import { Storage } from 'aws-amplify';
+import { uploadData, getUrl, remove } from '../config/aws-config';
 
 export const storage = {
   uploadFile: async (key: string, file: File) => {
     try {
-      const result = await Storage.put(key, file, {
-        contentType: file.type,
-        progressCallback(progress) {
-          console.log(`Uploaded: ${progress.loaded}/${progress.total}`);
-        },
+      const result = await uploadData({
+        key,
+        data: file,
+        options: {
+          contentType: file.type,
+          onProgress: (progress) => {
+            console.log(`Uploaded: ${progress.loaded}/${progress.total}`);
+          }
+        }
       });
       return result;
     } catch (error) {
@@ -18,7 +22,8 @@ export const storage = {
 
   getFileUrl: async (key: string) => {
     try {
-      return await Storage.get(key);
+      const { url } = await getUrl({ key });
+      return url;
     } catch (error) {
       console.error('Error getting file URL:', error);
       throw error;
@@ -27,7 +32,7 @@ export const storage = {
 
   deleteFile: async (key: string) => {
     try {
-      await Storage.remove(key);
+      await remove({ key });
     } catch (error) {
       console.error('Error deleting file:', error);
       throw error;
