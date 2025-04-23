@@ -1,39 +1,59 @@
-version: 1
-applications:
-  - appRoot: .
-    env:
-      variables:
-        NODE_ENV: "production"
-        CI: "true"
-    backend:
-      phases:
-        preBuild:
-          commands:
-            - echo "Validating CF template…"
-            - aws cloudformation validate-template --template-body file://cloudformation.yaml
-        build:
-          commands:
-            - echo "Deploying backend…"
-            - aws cloudformation deploy \
-                --template-file cloudformation.yaml \
-                --stack-name qpms-backend \
-                --capabilities CAPABILITY_IAM \
-                --parameter-overrides Environment=dev
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - npm ci
-            - npm cache verify
-        build:
-          commands:
-            - npm run lint
-            - npm run test || true
-            - npm run build
-      artifacts:
-        baseDirectory: dist
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - npm ci
+      - npm cache verify
+      - npm install -g npm@latest
+      - npm install -g eslint
+
+  pre_build:
+    commands:
+      - echo "Starting pre-build phase..."
+      - aws --version
+      - echo "Running security audit..."
+      - npm audit
+      - echo "Running linting..."
+      - npm run lint
+
+  build:
+    commands:
+      - echo "Starting build phase..."
+      - echo "Running tests..."
+      - npm run test || true
+      - echo "Building application..."
+      - npm run build
+
+  post_build:
+    commands:
+      - echo "Starting post-build phase..."
+      - echo "Running build verification..."
+      - test -f dist/index.html || exit 1
+      - echo "Build completed successfully!"
+
+cache:
+  paths:
+    - 'node_modules/**/*'
+    - '.npm/**/*'
+    - 'dist/**/*'
+    - '.eslintcache'
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: dist
+  name: qpms-build-$(date +%Y-%m-%d)
+  discard-paths: no
+
+reports:
+  jest_reports:
+    files:
+      - 'coverage/clover.xml'
+    file-format: CLOVERXML
+  eslint_reports:
+    files:
+      - 'eslint-report.json'
+    file-format: JSON
