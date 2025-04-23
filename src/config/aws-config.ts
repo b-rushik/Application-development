@@ -5,15 +5,16 @@ import { uploadData, getUrl, remove } from 'aws-amplify/storage';
 Amplify.configure({
   Auth: {
     Cognito: {
-      userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
-      userPoolClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+      userPoolId: process.env.AMPLIFY_AUTH_USER_POOL_ID,
+      userPoolClientId: process.env.AMPLIFY_AUTH_USER_POOL_CLIENT_ID,
       signUpVerificationMethod: 'code',
+      region: 'ap-south-1'
     }
   },
   Storage: {
     S3: {
-      bucket: import.meta.env.VITE_S3_BUCKET,
-      region: import.meta.env.VITE_AWS_REGION,
+      bucket: process.env.AMPLIFY_STORAGE_BUCKET,
+      region: 'ap-south-1'
     }
   }
 });
