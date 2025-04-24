@@ -9,18 +9,20 @@ export default [
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['dist/**'],
+    ignores: ['dist/**', '**/*.d.ts', 'node_modules/**'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        ecmaVersion: 2020,
+        project: true, // Add this for TypeScript support
+        ecmaVersion: 2022, // Updated from 2020
         sourceType: 'module',
         ecmaFeatures: {
           jsx: true
         }
       },
       globals: {
-        ...globals.browser
+        ...globals.browser,
+        ...globals.node
       }
     },
     plugins: {
@@ -34,7 +36,11 @@ export default [
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true }
-      ]
+      ],
+      // Add these basic rules to prevent common failures
+      'semi': ['error', 'always'],
+      'quotes': ['error', 'single'],
+      '@typescript-eslint/no-unused-vars': 'warn' // Change to 'error' when ready
     }
   }
 ];
