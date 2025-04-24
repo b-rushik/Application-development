@@ -5,15 +5,15 @@ import { uploadData, getUrl, remove } from '@aws-amplify/storage';
 const amplifyConfig = {
   Auth: {
     Cognito: {
-      userPoolId: process.env.AMPLIFY_AUTH_USER_POOL_ID,
-      userPoolClientId: process.env.AMPLIFY_AUTH_USER_POOL_CLIENT_ID,
+      userPoolId: 'd1mkstdbgtpxy7_userpool_d1mkstdbgtpxy7-Fourth',
+      userPoolClientId: '2g0j8l4q9t5v8n3k7m1p4r9h',
       signUpVerificationMethod: 'code',
       region: 'ap-south-1'
     }
   },
   Storage: {
     S3: {
-      bucket: process.env.AMPLIFY_STORAGE_BUCKET,
+      bucket: 'qpms-papers-Fourth-branch',
       region: 'ap-south-1'
     }
   }
