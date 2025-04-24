@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --no-error-on-unmatched-pattern --format json --output-file eslint-report.json",
+    "lint": "eslint . --no-error-on-unmatched-pattern --format stylish",
     "preview": "vite preview",
     "test": "vitest run --coverage"
   },

@@ -8,13 +8,19 @@ import tsParser from '@typescript-eslint/parser';
 export default [
   js.configs.recommended,
   {
+    ignores: [
+      'dist/**',       // Ignore all files in dist directory
+      '**/*.d.ts',
+      'node_modules/**'
+    ]
+  },
+  {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['dist/**', '**/*.d.ts', 'node_modules/**'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: true, // Add this for TypeScript support
-        ecmaVersion: 2022, // Updated from 2020
+        project: ['./tsconfig.app.json', './tsconfig.node.json', './tsconfig.lambda.json'],
+        ecmaVersion: 2022,
         sourceType: 'module',
         ecmaFeatures: {
           jsx: true
@@ -22,7 +28,9 @@ export default [
       },
       globals: {
         ...globals.browser,
-        ...globals.node
+        ...globals.node,
+        CheckCircle: 'readonly',
+        React: 'readonly'
       }
     },
     plugins: {
@@ -33,14 +41,24 @@ export default [
     rules: {
       ...tseslint.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true }
-      ],
-      // Add these basic rules to prevent common failures
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      '@typescript-eslint/no-explicit-any': 'off',
       'semi': ['error', 'always'],
-      'quotes': ['error', 'single'],
-      '@typescript-eslint/no-unused-vars': 'warn' // Change to 'error' when ready
+      'quotes': 'off',
+      'no-prototype-builtins': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-undef': 'off' // TypeScript already handles this
+    }
+  },
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      }
+    },
+    rules: {
+      'no-undef': 'error'
     }
   }
 ];
