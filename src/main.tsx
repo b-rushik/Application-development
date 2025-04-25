@@ -8,14 +8,14 @@ import './index.css';
 Amplify.configure({
   Auth: {
     region: 'ap-south-1',
-    userPoolId: 'ap-south-1_XXXXXXXXX', // This will be replaced with actual pool ID from CFT
-    userPoolWebClientId: 'XXXXXXXXXXXXXXXXXXXXXXXXXX', // This will be replaced with actual client ID from CFT
+    userPoolId: 'ap-south-1_AnlDE8FZs', // This will be replaced with actual pool ID from CFT
+    userPoolWebClientId: '2e0gb13mtqpgcuo4vhjkpit5es', // This will be replaced with actual client ID from CFT
     mandatorySignIn: true,
   },
   Storage: {
     region: 'ap-south-1',
     bucket: 'gyaan-kriti-documents', // This will be replaced with actual bucket name from CFT
-    identityPoolId: 'ap-south-1:XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', // This will be replaced with actual identity pool ID from CFT
+    identityPoolId: 'ap-south-1:239c23bc-906d-4005-8b00-6ddea1e28398', // This will be replaced with actual identity pool ID from CFT
   }
 });
 
