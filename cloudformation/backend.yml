@@ -1,0 +1,520 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for Gyaan Kriti Exam Paper Management System - Backend Resources'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Description: The environment to deploy to
+
+Resources:
+  # Cognito Resources
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub 'GyanKriti-UserPool-${Environment}'
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: custom:userId
+          AttributeDataType: String
+          Mutable: true
+        - Name: custom:orgEmail
+          AttributeDataType: String
+          Mutable: true
+        - Name: custom:role
+          AttributeDataType: String
+          Mutable: true
+        - Name: custom:isVerified
+          AttributeDataType: String
+          Mutable: true
+        - Name: custom:orgId
+          AttributeDataType: String
+          Mutable: true
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub 'GyanKriti-UserPoolClient-${Environment}'
+      UserPoolId: !Ref CognitoUserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_ADMIN_USER_PASSWORD_AUTH
+      GenerateSecret: false
+
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: !Sub 'GyanKriti-IdentityPool-${Environment}'
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !Ref UserPoolClient
+          ProviderName: !GetAtt CognitoUserPool.ProviderName
+
+  # IAM Roles
+  AuthenticatedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'cognito-identity.amazonaws.com:aud': !Ref IdentityPool
+              'ForAnyValue:StringLike':
+                'cognito-identity.amazonaws.com:amr': authenticated
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  IdentityPoolRoleAttachment:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !GetAtt AuthenticatedRole.Arn
+
+  # S3 Bucket for Document Storage
+  DocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'gyaan-kriti-documents-${Environment}-${AWS::AccountId}'
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - HEAD
+            AllowedOrigins:
+              - '*'
+            MaxAge: 3600
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # DynamoDB Tables
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'GyanKriti-Users-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: role
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: RoleIndex
+          KeySchema:
+            - AttributeName: role
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  PaperSettersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'GyanKriti-PaperSetters-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIdIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  PaperGettersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'GyanKriti-PaperGetters-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIdIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  AdminsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'GyanKriti-Admins-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIdIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  PaperRequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'GyanKriti-PaperRequests-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: paperGetterId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: PaperGetterIndex
+          KeySchema:
+            - AttributeName: paperGetterId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  QuestionPapersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'GyanKriti-QuestionPapers-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: paperSetterId
+          AttributeType: S
+        - AttributeName: assignmentId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: PaperSetterIndex
+          KeySchema:
+            - AttributeName: paperSetterId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: AssignmentIndex
+          KeySchema:
+            - AttributeName: assignmentId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  ExpertReviewsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'GyanKriti-ExpertReviews-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: questionPaperId
+          AttributeType: S
+        - AttributeName: expertId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: QuestionPaperIndex
+          KeySchema:
+            - AttributeName: questionPaperId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ExpertIndex
+          KeySchema:
+            - AttributeName: expertId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  SubjectExpertsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'GyanKriti-SubjectExperts-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  # Lambda Functions
+  EmailNotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'GyanKriti-EmailNotification-${Environment}'
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const ses = new AWS.SES({ region: 'ap-south-1' });
+          
+          exports.handler = async (event) => {
+            try {
+              const { to, subject, message, attachments } = event;
+              
+              const params = {
+                Destination: {
+                  ToAddresses: Array.isArray(to) ? to : [to],
+                },
+                Message: {
+                  Body: {
+                    Html: {
+                      Charset: 'UTF-8',
+                      Data: message,
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data: subject,
+                  },
+                },
+                Source: 'no-reply@organization-domain-name.com',
+              };
+              
+              const result = await ses.sendEmail(params).promise();
+              return {
+                statusCode: 200,
+                body: JSON.stringify({ message: 'Email sent successfully', messageId: result.MessageId }),
+              };
+            } catch (error) {
+              console.error('Error sending email:', error);
+              return {
+                statusCode: 500,
+                body: JSON.stringify({ message: 'Failed to send email', error: error.message }),
+              };
+            }
+          };
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          REGION: ap-south-1
+
+  DocumentProcessingFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'GyanKriti-DocumentProcessing-${Environment}'
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const s3 = new AWS.S3();
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          const lambda = new AWS.Lambda();
+          
+          exports.handler = async (event) => {
+            try {
+              const { bucketName, key, documentType, metadata } = event;
+              
+              // Process the document based on type and update relevant tables
+              if (documentType === 'QUESTION_PAPER') {
+                const { assignmentId, paperSetterId } = metadata;
+                
+                // Generate a pre-signed URL for the document
+                const params = {
+                  Bucket: bucketName,
+                  Key: key,
+                  Expires: 604800, // URL valid for 7 days
+                };
+                
+                const url = s3.getSignedUrl('getObject', params);
+                
+                // Update the question papers table
+                await dynamodb.put({
+                  TableName: process.env.QUESTION_PAPERS_TABLE,
+                  Item: {
+                    id: `qp-${Date.now()}`,
+                    paperSetterId,
+                    assignmentId,
+                    fileUrl: url,
+                    uploadedAt: new Date().toISOString(),
+                    status: 'PENDING_REVIEW',
+                  },
+                }).promise();
+                
+                // Notify relevant users
+                // ... notification logic
+                
+                return {
+                  statusCode: 200,
+                  body: JSON.stringify({ message: 'Document processed successfully' }),
+                };
+              }
+              
+              return {
+                statusCode: 400,
+                body: JSON.stringify({ message: 'Unsupported document type' }),
+              };
+            } catch (error) {
+              console.error('Error processing document:', error);
+              return {
+                statusCode: 500,
+                body: JSON.stringify({ message: 'Failed to process document', error: error.message }),
+              };
+            }
+          };
+      Timeout: 60
+      MemorySize: 256
+      Environment:
+        Variables:
+          REGION: ap-south-1
+          QUESTION_PAPERS_TABLE: !Ref QuestionPapersTable
+
+  # IAM Role for Lambda Functions
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaServiceAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:*
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: '*'
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'GyanKriti-API-${Environment}'
+      Description: API for Gyaan Kriti Exam Paper Management System
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  # API Gateway Resources and Methods to be defined here
+  # ...
+
+Outputs:
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub "${AWS::StackName}-UserPoolId"
+
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub "${AWS::StackName}-UserPoolClientId"
+
+  IdentityPoolId:
+    Description: Cognito Identity Pool ID
+    Value: !Ref IdentityPool
+    Export:
+      Name: !Sub "${AWS::StackName}-IdentityPoolId"
+
+  DocumentsBucketName:
+    Description: S3 Bucket for Document Storage
+    Value: !Ref DocumentsBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-DocumentsBucketName"
+
+  ApiGatewayEndpoint:
+    Description: API Gateway Endpoint
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiGatewayEndpoint"
