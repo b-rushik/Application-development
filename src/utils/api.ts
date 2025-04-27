@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an axios instance with default config
 export const api = axios.create({
-  baseURL: 'https://api.your-domain.com', // Replace with actual API URL in production
+  baseURL: 'https://gyaan-kriti.com/', // Replace with actual API URL in production
   headers: {
     'Content-Type': 'application/json',
   },
