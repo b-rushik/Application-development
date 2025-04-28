@@ -22,13 +22,12 @@ const countryCodes = [
 
 const SignupPage = () => {
   const [userType, setUserType] = useState<'paper_setter' | 'paper_getter'>('paper_setter');
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
 
   const schema = userType === 'paper_setter' ? paperSetterSignupSchema : paperGetterSignupSchema;
   
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       fullName: '',
@@ -40,10 +39,11 @@ const SignupPage = () => {
     },
   });
 
+  const termsAccepted = watch('termsAccepted');
+
   const onSubmit = async (data: any) => {
     try {
       setLoading(true);
-      // Combine data with user type
       const userData = {
         ...data,
         role: userType,
@@ -51,7 +51,7 @@ const SignupPage = () => {
       
       await signup(userData);
       toast.success('Registration successful!');
-      reset(); // Reset form after successful submission
+      reset();
     } catch (error) {
       console.error('Signup error:', error);
       toast.error('Registration failed. Please try again.');
@@ -62,7 +62,7 @@ const SignupPage = () => {
 
   const switchUserType = (type: 'paper_setter' | 'paper_getter') => {
     setUserType(type);
-    reset(); // Reset form when switching user type
+    reset();
   };
 
   return (
@@ -79,7 +79,6 @@ const SignupPage = () => {
       </div>
 
       <div className="p-6">
-        {/* User Type Selection */}
         <div className="flex mb-6 border rounded-md overflow-hidden">
           <button
             type="button"
@@ -159,8 +158,6 @@ const SignupPage = () => {
                   id="terms"
                   type="checkbox"
                   className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
                   {...register('termsAccepted')}
                 />
               </div>
@@ -179,7 +176,7 @@ const SignupPage = () => {
                   </a>
                 </label>
                 {errors.termsAccepted && (
-                  <p className="form-error">{errors.termsAccepted.message?.toString()}</p>
+                  <p className="mt-1 text-sm text-error-500">{errors.termsAccepted.message?.toString()}</p>
                 )}
               </div>
             </div>
@@ -190,7 +187,7 @@ const SignupPage = () => {
             variant="primary"
             fullWidth
             isLoading={loading}
-            disabled={loading}
+            disabled={loading || !termsAccepted}
           >
             Create Account
           </Button>
