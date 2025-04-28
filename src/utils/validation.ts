@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Common validation schemas
 export const passwordSchema = z
   .string()
   .min(4, 'Password must be between 4-20 characters')
@@ -17,49 +16,40 @@ export const mobileSchema = z
   .min(10, 'Mobile number must be at least 10 digits')
   .regex(/^\d+$/, 'Mobile number must contain only digits');
 
-// Paper Setter sign up validation
-export const paperSetterSignupSchema = z.object({
+const baseSignupSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
+  password: passwordSchema,
+  countryCode: z.string().min(1, 'Country code is required'),
+  mobileNumber: mobileSchema,
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the terms and conditions',
+  }),
+});
+
+export const paperSetterSignupSchema = baseSignupSchema.extend({
   email: emailSchema.refine(
     (email) => email.endsWith('.edu') || email.includes('college') || email.includes('university'),
     { message: 'Please use a college or university email' }
   ),
-  password: passwordSchema,
-  countryCode: z.string().min(1, 'Country code is required'),
-  mobileNumber: mobileSchema,
-  termsAccepted: z.literal(true, {
-    errorMap: () => ({ message: 'You must accept the terms and conditions' }),
-  }),
 });
 
-// Paper Getter sign up validation
-export const paperGetterSignupSchema = z.object({
-  fullName: z.string().min(2, 'Full name is required'),
+export const paperGetterSignupSchema = baseSignupSchema.extend({
   email: emailSchema.refine(
     (email) => email.includes('exam') || email.includes('college') || email.includes('university'),
     { message: 'Please use an exam cell email' }
   ),
-  password: passwordSchema,
-  countryCode: z.string().min(1, 'Country code is required'),
-  mobileNumber: mobileSchema,
-  termsAccepted: z.literal(true, {
-    errorMap: () => ({ message: 'You must accept the terms and conditions' }),
-  }),
 });
 
-// Login validation
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Password is required'),
 });
 
-// Admin login validation
 export const adminLoginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
 });
 
-// Paper setter personal details validation
 export const paperSetterDetailsSchema = z.object({
   organization: z.enum(['IIT/NIT', 'Central/State University', 'Autonomous/Affiliated College']),
   collegeName: z.string().min(2, 'College name is required'),
@@ -80,7 +70,6 @@ export const paperSetterDetailsSchema = z.object({
   overallExperience: z.number().min(1, 'Overall experience is required'),
 });
 
-// Paper request validation
 export const paperRequestSchema = z.object({
   course: z.string().min(2, 'Course is required'),
   branch: z.string().min(2, 'Branch is required'),
