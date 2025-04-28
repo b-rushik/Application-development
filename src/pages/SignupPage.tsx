@@ -25,10 +25,8 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
 
-  const schema = userType === 'paper_setter' ? paperSetterSignupSchema : paperGetterSignupSchema;
-  
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(userType === 'paper_setter' ? paperSetterSignupSchema : paperGetterSignupSchema),
     defaultValues: {
       fullName: '',
       email: '',
@@ -47,14 +45,15 @@ const SignupPage = () => {
       const userData = {
         ...data,
         role: userType,
+        mobileNumber: `${data.countryCode}${data.mobileNumber}`,
       };
       
       await signup(userData);
-      toast.success('Registration successful!');
+      toast.success('Registration successful! Please wait for admin verification.');
       reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
-      toast.error('Registration failed. Please try again.');
+      toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -63,6 +62,11 @@ const SignupPage = () => {
   const switchUserType = (type: 'paper_setter' | 'paper_getter') => {
     setUserType(type);
     reset();
+  };
+
+  const openTermsAndConditions = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.open('/terms-and-conditions.pdf', '_blank');
   };
 
   return (
@@ -165,12 +169,9 @@ const SignupPage = () => {
                 <label htmlFor="terms" className="font-medium text-gray-700">
                   I accept the{' '}
                   <a 
-                    href="#" 
+                    href="#"
                     className="text-primary-500 hover:underline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.open('/terms-and-conditions.pdf', '_blank');
-                    }}
+                    onClick={openTermsAndConditions}
                   >
                     Terms and Conditions
                   </a>

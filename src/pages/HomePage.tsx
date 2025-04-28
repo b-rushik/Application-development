@@ -1,11 +1,34 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowDown, Check, Users, Shield, Award, Mail, Phone, MapPin } from 'lucide-react';
+import { toast } from 'react-toastify';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import Logo from '../components/common/Logo';
+import { api } from '../utils/api';
 
 const HomePage = () => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      subject: formData.get('subject'),
+      message: formData.get('message'),
+    };
+
+    try {
+      await api.post('/contact', data);
+      toast.success('Message sent successfully! We will get back to you soon.');
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -483,30 +506,53 @@ const HomePage = () => {
             <div className="lg:col-span-3 card p-6">
               <h3 className="text-xl font-semibold mb-6">Send a Message</h3>
               
-              <form className="space-y-4">
+              <form onSubmit={handleContactSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="name" className="label">Full Name</label>
-                    <input type="text" id="name" className="input-field" placeholder="Your Name" />
+                    <input 
+                      type="text" 
+                      id="name" 
+                      name="name"
+                      className="input-field" 
+                      placeholder="Your Name" 
+                      required 
+                    />
                   </div>
                   <div>
                     <label htmlFor="email" className="label">Email Address</label>
-                    <input type="email" id="email" className="input-field" placeholder="Your Email" />
+                    <input 
+                      type="email" 
+                      id="email" 
+                      name="email"
+                      className="input-field" 
+                      placeholder="Your Email" 
+                      required 
+                    />
                   </div>
                 </div>
                 
                 <div>
                   <label htmlFor="subject" className="label">Subject</label>
-                  <input type="text" id="subject" className="input-field" placeholder="Subject" />
+                  <input 
+                    type="text" 
+                    id="subject" 
+                    name="subject"
+                    className="input-field" 
+                    placeholder="Subject" 
+                    required 
+                  />
                 </div>
                 
                 <div>
                   <label htmlFor="message" className="label">Message</label>
                   <textarea 
                     id="message" 
+                    name="message"
                     rows={5} 
                     className="input-field resize-none" 
                     placeholder="Your Message"
+                    required
                   ></textarea>
                 </div>
                 
