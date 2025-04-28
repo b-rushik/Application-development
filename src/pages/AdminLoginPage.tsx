@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { Lock, Mail, Shield } from 'lucide-react';
+import { Lock, Mail, Shield, User } from 'lucide-react';
 import InputField from '../components/common/InputField';
 import Button from '../components/common/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { adminLoginSchema } from '../utils/validation';
-import Logo from '../components/common/Logo';
+import { Link } from 'react-router-dom';
 
 const AdminLoginPage = () => {
   const [loading, setLoading] = useState(false);
@@ -151,10 +151,18 @@ const AdminLoginPage = () => {
         )}
       </div>
 
-      <div className="p-4 bg-gray-50 border-t text-center text-sm text-gray-600">
-        <p>
-          This login is restricted to authorized administrators only.
-        </p>
+      <div className="p-4 bg-gray-50 border-t">
+        <div className="text-center text-sm text-gray-600 space-y-2">
+          <p>
+            This login is restricted to authorized administrators only.
+          </p>
+          <p>
+            Are you a Super User?{' '}
+            <Link to="/super-user-login" className="text-primary-500 hover:underline">
+              Login here
+            </Link>
+          </p>
+        </div>
       </div>
     </motion.div>
   );
