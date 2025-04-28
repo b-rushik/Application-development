@@ -18,11 +18,12 @@ export const mobileSchema = z
 
 const baseSignupSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
+  email: emailSchema,
   password: passwordSchema,
   countryCode: z.string().min(1, 'Country code is required'),
   mobileNumber: mobileSchema,
-  termsAccepted: z.boolean().refine((val) => val === true, {
-    message: 'You must accept the terms and conditions',
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: 'You must accept the terms and conditions' }),
   }),
 });
 
@@ -48,49 +49,4 @@ export const loginSchema = z.object({
 export const adminLoginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
-});
-
-export const paperSetterDetailsSchema = z.object({
-  organization: z.enum(['IIT/NIT', 'Central/State University', 'Autonomous/Affiliated College']),
-  collegeName: z.string().min(2, 'College name is required'),
-  branch: z.string().min(2, 'Branch is required'),
-  subjectsOfExpertise: z.array(z.string()).min(1, 'At least one subject is required'),
-  proficiencyLevels: z.array(
-    z.object({
-      subject: z.string(),
-      level: z.enum(['Beginner', 'Intermediate', 'Expert']),
-    })
-  ),
-  experience: z.array(
-    z.object({
-      subject: z.string(),
-      years: z.number().min(3).max(6),
-    })
-  ),
-  overallExperience: z.number().min(1, 'Overall experience is required'),
-});
-
-export const paperRequestSchema = z.object({
-  course: z.string().min(2, 'Course is required'),
-  branch: z.string().min(2, 'Branch is required'),
-  subject: z.string().min(2, 'Subject is required'),
-  difficultyLevel: z.enum(['High', 'Medium', 'Low']),
-  numberOfSets: z.enum(['1', '2', '3', '4']),
-  examDate: z.string().min(2, 'Exam date is required'),
-  examTime: z.string().min(2, 'Exam time is required'),
-  syllabusFile: z
-    .instanceof(File)
-    .refine((file) => file.size > 0, 'Syllabus file is required')
-    .refine(
-      (file) => file.type === 'application/pdf',
-      'Only PDF files are allowed'
-    ),
-  modelPaperFile: z
-    .instanceof(File)
-    .refine((file) => file.size > 0, 'Model paper file is required')
-    .refine(
-      (file) => file.type === 'application/pdf',
-      'Only PDF files are allowed'
-    ),
-  selectedFaculty: z.string().min(1, 'Please select a faculty member'),
 });
