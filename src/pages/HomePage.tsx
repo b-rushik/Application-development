@@ -477,7 +477,8 @@ const HomePage = () => {
                   <Phone className="mr-4 text-primary-500 flex-shrink-0 mt-1" size={20} />
                   <div>
                     <h4 className="font-medium">Call Us</h4>
-                    <p className="text-gray-600">+91 98765 43210</p>
+                    <p className="text-gray-600">+91-9347375817</p>
+                    <p className="text-gray-600">+91 9133521829</p>
                   </div>
                 </div>
                 
