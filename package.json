@@ -1,0 +1,48 @@
+{
+  "name": "question-paper-management-system",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --no-error-on-unmatched-pattern --format stylish",
+    "preview": "vite preview",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@aws-amplify/auth": "6.0.12",
+    "@aws-amplify/core": "6.0.12",
+    "@aws-amplify/storage": "6.0.12",
+    "@aws-amplify/ui-react": "6.0.7",
+    "framer-motion": "11.0.3",
+    "js-cookie": "3.0.5",
+    "lucide-react": "0.344.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-hook-form": "7.49.3",
+    "react-router-dom": "6.22.1",
+    "react-toastify": "10.0.4",
+    "typescript": "5.3.3",
+    "vite": "^5.4.18"
+  },
+  "devDependencies": {
+    "@aws-sdk/types": "3.370.0",
+    "@eslint/js": "8.56.0",
+    "@types/js-cookie": "3.0.6",
+    "@types/react": "18.3.5",
+    "@types/react-dom": "18.3.0",
+    "@typescript-eslint/eslint-plugin": "6.21.0",
+    "@typescript-eslint/parser": "6.21.0",
+    "@vitejs/plugin-react": "4.3.1",
+    "@vitest/coverage-c8": "0.33.0",
+    "autoprefixer": "10.4.18",
+    "eslint": "8.56.0",
+    "eslint-plugin-react-hooks": "4.6.0",
+    "eslint-plugin-react-refresh": "0.4.11",
+    "globals": "15.0.0",
+    "postcss": "8.4.35",
+    "tailwindcss": "3.4.1",
+    "vitest": "0.34.6"
+  }
+}

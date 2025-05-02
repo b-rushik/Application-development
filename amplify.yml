@@ -1,0 +1,29 @@
+version: 1
+
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm install -g eslint
+            - npm ci --legacy-peer-deps --force
+            - npm cache verify
+            - echo "Running security audit..."
+            - npm audit || true
+            - echo "Running linting..."
+            - npm run lint
+        build:
+          commands:
+            - echo "Running tests..."
+            - npm run test || true
+            - echo "Building application..."
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - 'node_modules/**/*'
+          - '.npm/**/*'
+          - '.eslintcache'

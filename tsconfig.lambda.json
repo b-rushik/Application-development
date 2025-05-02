@@ -1,0 +1,16 @@
+{
+    "extends": "./tsconfig.base.json",  // Or your base config if you have one
+    "compilerOptions": {
+      "target": "ES2020",
+      "module": "CommonJS",
+      "outDir": "./dist/lambda",
+      "rootDir": "./lambda",
+      "strict": true
+    },
+    "include": [
+      "lambda/**/*.ts"
+    ],
+    "exclude": [
+      "node_modules"
+    ]
+  }
